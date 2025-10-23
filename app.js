@@ -1,5 +1,12 @@
 import express from "express";
 import { PrismaClient } from "@prisma/client";
+import { assert } from "superstruct";
+import {
+  CreateUser,
+  PatchUser,
+  CreateProduct,
+  PatchProduct,
+} from "./structs.js";
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -41,15 +48,38 @@ app.get("/users/:id", async (req, res) => {
 
 app.post("/users", async (req, res) => {
   const data = req.body;
-  const user = await prisma.user.create({
-    data,
-  });
-  res.status(201).send(user);
+  try {
+    assert(data, CreateUser);
+    const { userPreference, ...userFields } = req.body;
+
+    const user = await prisma.user.create({
+      data: {
+        ...userFields,
+        userPreference: {
+          create: userPreference,
+        },
+      },
+      include: {
+        //저장에는 무관/ 보기 위한 코드
+        userPreference: true,
+      },
+    });
+    res.status(201).send(user);
+  } catch (e) {
+    console.error(e);
+    console.log("Validation failed");
+    return res.status(400).send({ error: "Check request body" });
+  }
 });
 
 app.patch("/users/:id", async (req, res) => {
   const { id } = req.params;
   const data = req.body;
+  try {
+    assert(data, PatchUser);
+  } catch (e) {
+    return res.status(400).send({ error: "Check request body" });
+  }
   const user = await prisma.user.update({
     where: { id },
     data,
@@ -111,6 +141,11 @@ app.get("/products/:id", async (req, res) => {
 
 app.post("/products", async (req, res) => {
   const data = req.body;
+  try {
+    assert(data, CreateProduct);
+  } catch (e) {
+    return res.status(400).send({ error: "Check request body" });
+  }
   const product = await prisma.product.create({
     data,
   });
@@ -120,6 +155,11 @@ app.post("/products", async (req, res) => {
 app.patch("/products/:id", async (req, res) => {
   const { id } = req.params;
   const data = req.body;
+  try {
+    assert(data, PatchProduct);
+  } catch (e) {
+    return res.status(400).send({ error: "Check request body" });
+  }
   const product = await prisma.product.update({
     where: { id },
     data,

@@ -6,17 +6,20 @@ POST http://localhost:3000/users
 Content-Type: application/json
 
 {
- "email": "test-8@naver.com",
+ "email": "test-11@test.com",
 "firstName": "Adwa",
 "lastName": "Kim",
-"address": "Seoul, Korea"
+"address": "Seoul, Korea",
+"userPreference": {
+    "receiveEmail": true
+}
 }
 
 ###
 GET http://localhost:3000/users/708bab3a-5b4c-4024-9ae8-8d42746136a1
 
 ###
-PATCH http://localhost:3000/users/708bab3a-5b4c-4024-9ae8-8d42746136a1
+PATCH http://localhost:3000/users/9a410095-1254-48b9-9736-33089205db12
 Content-Type: application/json
 
 {
