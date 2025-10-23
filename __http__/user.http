@@ -6,8 +6,22 @@ POST http://localhost:3000/users
 Content-Type: application/json
 
 {
- "email": "Adwa@naver.com",
+ "email": "test-8@naver.com",
 "firstName": "Adwa",
 "lastName": "Kim",
 "address": "Seoul, Korea"
 }
+
+###
+GET http://localhost:3000/users/708bab3a-5b4c-4024-9ae8-8d42746136a1
+
+###
+PATCH http://localhost:3000/users/708bab3a-5b4c-4024-9ae8-8d42746136a1
+Content-Type: application/json
+
+{
+    "firstName": "ddwa",
+    "lastName": "sss"
+}
+###
+DELETE http://localhost:3000/users/8c65f9da-62fc-49d0-ae62-f3a183c36a17

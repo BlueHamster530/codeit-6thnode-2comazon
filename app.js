@@ -14,6 +14,15 @@ app.get("/users", async (req, res) => {
   res.send(users);
 });
 
+app.get("/users/:id", async (req, res) => {
+  const id = req.params.id;
+  const user = await prisma.user.findUnique({
+    where: { id },
+  });
+  if (user) res.send(user);
+  else res.status(404).send({ error: "User not found" });
+});
+
 app.post("/users", async (req, res) => {
   const data = req.body;
   const user = await prisma.user.create({
@@ -22,6 +31,74 @@ app.post("/users", async (req, res) => {
   res.status(201).send(user);
 });
 
+app.patch("/users/:id", async (req, res) => {
+  const { id } = req.params;
+  const data = req.body;
+  const user = await prisma.user.update({
+    where: { id },
+    data,
+  });
+  res.send(user);
+});
+
+app.delete("/users/:id", async (req, res) => {
+  const { id } = req.params;
+  const user = await prisma.user.delete({
+    where: { id },
+  });
+  res.status(user);
+});
+
 app.listen(port, () => {
   console.log(`Server is running on http://localhost:${port}`);
+});
+
+//product routes
+
+app.get("/products", async (req, res) => {
+  const product = await prisma.product.findMany();
+  console.log(product);
+  res.send(product);
+});
+
+app.get("/products/:id", async (req, res) => {
+  const { id } = req.params;
+  const product = await prisma.product.findUnique({
+    where: { id },
+  });
+  res.send(product);
+});
+
+app.post("/products", async (req, res) => {
+  const data = req.body;
+  const product = await prisma.product.create({
+    data,
+  });
+  res.status(201).send(product);
+});
+
+app.patch("/products/:id", async (req, res) => {
+  const { id } = req.params;
+  const data = req.body;
+  const product = await prisma.product.update({
+    where: { id },
+    data,
+  });
+  res.send(product);
+});
+
+app.delete("/products/:id", async (req, res) => {
+  const { id } = req.params;
+  try {
+    const product = await prisma.product.delete({
+      where: { id },
+    });
+
+    res.status(product);
+  } catch (error) {
+    console.error("없는 상품입니다.");
+    res
+      .status(400)
+      .send({ error: "Cannot delete product that is associated with orders." });
+  }
 });
