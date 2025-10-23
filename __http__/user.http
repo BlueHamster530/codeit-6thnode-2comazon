@@ -1,4 +1,4 @@
-GET http://localhost:3000/users
+GET http://localhost:3000/users?order=newest&offset=0&limit=5
 
 ###
 
