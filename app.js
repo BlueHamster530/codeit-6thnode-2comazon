@@ -1,5 +1,5 @@
 import express from "express";
-import { PrismaClient } from "@prisma/client";
+import { Prisma, PrismaClient } from "@prisma/client";
 import { assert } from "superstruct";
 import {
   CreateUser,
@@ -14,6 +14,26 @@ const port = process.env.PORT || 3000;
 app.use(express.json());
 
 const prisma = new PrismaClient();
+
+//#region Handlers
+function asyncHandler(handler) {
+  return async function (req, res) {
+    try {
+      await handler(req, res);
+    } catch (e) {
+      console.error(e);
+      if (
+        e instanceof Prisma.PrismaClientKnownRequestError &&
+        e.code === "P2025"
+      ) {
+        res.sendStatus(404);
+      } else {
+        res.status(500).send({ message: e.message });
+      }
+    }
+  };
+}
+//#endregion
 
 //#region users routes
 app.get("/users", async (req, res) => {
@@ -42,16 +62,17 @@ app.get("/users", async (req, res) => {
   res.send(users);
 });
 
-app.get("/users/:id", async (req, res) => {
-  const id = req.params.id;
-  const user = await prisma.user.findUnique({
-    include: { userPreference: true },
-    where: { id },
-  });
-  user.userPreference;
-  if (user) res.send(user);
-  else res.status(404).send({ error: "User not found" });
-});
+app.get(
+  "/users/:id",
+  asyncHandler(async (req, res) => {
+    const id = req.params.id;
+    const user = await prisma.user.findUniqueOrThrow({
+      where: { id },
+      include: { userPreference: true },
+    });
+    res.send(user);
+  })
+);
 
 app.post("/users", async (req, res) => {
   const data = req.body;
@@ -232,29 +253,34 @@ app.post("/orders", async (req, res) => {
     if (!isSufficientStock) {
       return res.status(500).send({ message: "Insufficient Stock" });
     }
-    await Promise.all(
-      productIds.map((id) => {
-        return prisma.product.update({
-          where: { id },
-          data: {
-            stock: { decrement: getQuantity(id) },
-          },
-        });
-      })
-    );
-    const order = await prisma.order.create({
-      data: {
-        user: {
-          connect: { id: orderProperties.userId },
+
+    const queries = productIds.map((id) => {
+      return prisma.product.update({
+        where: { id },
+        data: {
+          stock: { decrement: getQuantity(id) },
         },
-        OrderItems: {
-          create: orderItems,
-        },
-      },
-      include: {
-        OrderItems: true,
-      },
+      });
     });
+
+    //재고 업데이트
+    const [order] = await prisma.$transaction([
+      prisma.order.create({
+        data: {
+          user: {
+            connect: { id: orderProperties.userId },
+          },
+          OrderItems: {
+            create: orderItems,
+          },
+        },
+        include: {
+          OrderItems: true,
+        },
+      }),
+      ...queries,
+    ]);
+    //주문 생성
 
     res.status(201).send(order);
   } catch (e) {
