@@ -1,6 +1,9 @@
 GET http://localhost:3000/users?order=newest&offset=0&limit=5
 
 ###
+GET http://localhost:3000/users/31194866-d63e-48ad-bd6a-f670dc02f650
+
+###
 
 POST http://localhost:3000/users
 Content-Type: application/json
@@ -16,10 +19,15 @@ Content-Type: application/json
 }
 
 ###
-GET http://localhost:3000/users/31194866-d63e-48ad-bd6a-f6s70dc02f650
+POST http://localhost:3000/users/31194866-d63e-48ad-bd6a-f670dc02f650/save
+Content-Type: application/json
+
+{
+"productId":"0d8e554a-84c0-4b9c-bdc3-d04b9bbf1344"
+}
 
 ###
-PATCH http://localhost:3000/users/81d18e9d-b07b-4f6e-ac1a-e53fce0c3219
+PATCH http://localhost:3000/users/31194866-d63e-48ad-bd6a-f670dc02f650
 Content-Type: application/json
 
 {
@@ -29,5 +37,7 @@ Content-Type: application/json
         "receiveEmail":false
     }
 }
+
+
 ###
 DELETE http://localhost:3000/users/8c65f9da-62fc-49d0-ae62-f3a183c36a17

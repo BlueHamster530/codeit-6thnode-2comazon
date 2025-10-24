@@ -23,7 +23,7 @@ model User {
   updatedAt      DateTime        @updatedAt
   userPreference userPreference?
   Order          Order[]
-  Product        Product[]
+  savedItems     Product[]
 }
 
 model userPreference {

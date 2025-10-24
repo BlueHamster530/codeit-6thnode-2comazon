@@ -2,6 +2,17 @@ import * as s from "superstruct";
 import isEmail from "is-email";
 import isUuid from "is-uuid";
 
+const Category = [
+  "FASHION",
+  "BEAUTY",
+  "SPORTS",
+  "ELECTRONICS",
+  "HOME_INTERIOR",
+  "KITCHENWARE",
+  "HOUSEHOLD_SUPPLIES",
+];
+const Order_Status = ["PENDING", "COMPLETE"];
+
 export const CreateUser = s.object({
   email: s.define("Email", isEmail),
   firstName: s.size(s.string(), 1, 30),
@@ -14,15 +25,6 @@ export const CreateUser = s.object({
 
 export const PatchUser = s.partial(CreateUser);
 
-const Category = [
-  "FASHION",
-  "BEAUTY",
-  "SPORTS",
-  "ELECTRONICS",
-  "HOME_INTERIOR",
-  "KITCHENWARE",
-  "HOUSEHOLD_SUPPLIES",
-];
 
 export const CreateProduct = s.object({
   name: s.size(s.string(), 1, 100),
@@ -33,8 +35,6 @@ export const CreateProduct = s.object({
 });
 
 export const PatchProduct = s.partial(CreateProduct);
-
-const Order_Status = ["PENDING", "COMPLETE"];
 
 export const CreateOrder = s.object({
   userId: s.define("Uuid", (value) => isUuid.v4(value)),
@@ -51,4 +51,9 @@ export const CreateOrder = s.object({
 
 export const PatchOrder = s.object({
   status: s.enums(Order_Status),
+});
+
+export const SaveProduct = s.object({
+  productId: s.define("Uuid", (value) => isUuid.v4(value)),
+
 });

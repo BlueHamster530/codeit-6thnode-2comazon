@@ -2,10 +2,13 @@ import express from 'express';
 import { Prisma, PrismaClient } from '@prisma/client';
 import { assert } from 'superstruct';
 import { asyncHandler } from './Handlers.js';
-import { CreateUser, PatchUser, CreateProduct, PatchProduct, CreateOrder, PatchOrder } from './structs.js';
+import { CreateUser, PatchUser, CreateProduct, PatchProduct, CreateOrder, PatchOrder, SaveProduct } from './structs.js';
+import { PORT } from './constants.js';
+import cors from 'cors';
+
 
 const app = express();
-const port = process.env.PORT || 3000;
+app.use(cors());
 app.use(express.json());
 
 const prisma = new PrismaClient();
@@ -41,7 +44,10 @@ app.get('/users/:id', asyncHandler(async (req, res) => {
   const id = req.params.id;
   const user = await prisma.user.findUniqueOrThrow({
     where: { id },
-    include: { userPreference: true },
+    include: {
+      userPreference: true,
+      savedItems: true,
+    },
   });
   res.send(user);
 }),
@@ -64,6 +70,27 @@ app.post('/users', asyncHandler(async (req, res) => {
     },
   });
   res.status(201).send(user);
+}),
+);
+
+app.post('/users/:id/save', asyncHandler(async (req, res) => {
+  assert(req.body, SaveProduct);
+  const { id: userId } = req.params;
+  const { productId } = req.body;
+  const data = await prisma.user.update({
+    where: { id: userId },
+    data: {
+      savedItems: {
+        connect: {
+          id: productId,
+        },
+      },
+    },
+    include: {
+      savedItems: true,
+    }
+  });
+  res.status(201).send(data);
 }),
 );
 
@@ -265,6 +292,6 @@ app.delete('/orders/:id', asyncHandler(async (req, res) => {
 
 //#endregion
 
-app.listen(port, () => {
-  console.log(`Server is running on http://localhost:${port}`);
+app.listen(PORT, () => {
+  console.log(`Server is running on http://localhost:${PORT}`);
 });
