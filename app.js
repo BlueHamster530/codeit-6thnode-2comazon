@@ -218,7 +218,7 @@ app.post("/orders", async (req, res) => {
       const orderItem = orderItems.find(
         (orderItem) => orderItem.productId === productId
       );
-      return orderItem;
+      return orderItem.quantity;
     }
 
     const products = await prisma.product.findMany({
@@ -232,16 +232,27 @@ app.post("/orders", async (req, res) => {
     if (!isSufficientStock) {
       return res.status(500).send({ message: "Insufficient Stock" });
     }
-
+    await Promise.all(
+      productIds.map((id) => {
+        return prisma.product.update({
+          where: { id },
+          data: {
+            stock: { decrement: getQuantity(id) },
+          },
+        });
+      })
+    );
     const order = await prisma.order.create({
       data: {
-        ...orderProperties,
-        orderItems: {
+        user: {
+          connect: { id: orderProperties.userId },
+        },
+        OrderItems: {
           create: orderItems,
         },
-        include: {
-          orderItems: true,
-        },
+      },
+      include: {
+        OrderItems: true,
       },
     });
 

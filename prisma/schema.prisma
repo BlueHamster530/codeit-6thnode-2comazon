@@ -43,17 +43,17 @@ model Product {
   stock       Int
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
-  OrderItem   OrderItem[]
+  OrderItems  OrderItem[]
 }
 
 model Order {
-  id        String      @id @default(uuid())
-  status    OrderStatus @default(PENDING)
-  createdAt DateTime    @default(now())
-  updatedAt DateTime    @updatedAt
-  user      User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
-  userId    String?
-  OrderItem OrderItem[]
+  id         String      @id @default(uuid())
+  status     OrderStatus @default(PENDING)
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+  user       User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
+  userId     String?
+  OrderItems OrderItem[]
 }
 
 model OrderItem {
