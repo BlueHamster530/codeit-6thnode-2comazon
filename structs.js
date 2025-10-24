@@ -1,5 +1,6 @@
 import * as s from "superstruct";
 import isEmail from "is-email";
+import isUuid from "is-uuid";
 
 export const CreateUser = s.object({
   email: s.define("Email", isEmail),
@@ -32,3 +33,17 @@ export const CreateProduct = s.object({
 });
 
 export const PatchProduct = s.partial(CreateProduct);
+
+const OrderStatus = ["PENDING", "COMPLETE"];
+
+export const CreateOrder = s.object({
+  userId: s.define("Uuid", (value) => isUuid.v4(value)),
+  orderItems: s.array(
+    s.object({
+      productId: s.define("Uuid", (value) => isUuid.v4(value)),
+      unitPrice: s.min(s.number(), 0),
+      quantity: s.min(s.integer(), 1),
+    })
+  ),
+  // status: s.enums(OrderStatus),
+});

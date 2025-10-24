@@ -6,6 +6,7 @@ import {
   PatchUser,
   CreateProduct,
   PatchProduct,
+  CreateOrder,
 } from "./structs.js";
 
 const app = express();
@@ -14,7 +15,7 @@ app.use(express.json());
 
 const prisma = new PrismaClient();
 
-//users routes
+//#region users routes
 app.get("/users", async (req, res) => {
   const { offset = 0, limit = 0, order = "newest" } = req.query;
   let orderBy;
@@ -32,6 +33,10 @@ app.get("/users", async (req, res) => {
     orderBy,
     skip: parseInt(offset),
     take: parseInt(limit) || undefined,
+    include: {
+      //저장에는 무관/ 보기 위한 코드
+      userPreference: true,
+    },
   });
   console.log(users);
   res.send(users);
@@ -40,8 +45,10 @@ app.get("/users", async (req, res) => {
 app.get("/users/:id", async (req, res) => {
   const id = req.params.id;
   const user = await prisma.user.findUnique({
+    include: { userPreference: true },
     where: { id },
   });
+  user.userPreference;
   if (user) res.send(user);
   else res.status(404).send({ error: "User not found" });
 });
@@ -74,17 +81,26 @@ app.post("/users", async (req, res) => {
 
 app.patch("/users/:id", async (req, res) => {
   const { id } = req.params;
-  const data = req.body;
+  // const data = req.body;
   try {
-    assert(data, PatchUser);
+    assert(req.body, PatchUser);
+    const { userPreference, ...userFields } = req.body;
+    const user = await prisma.user.update({
+      where: { id },
+      data: {
+        ...userFields,
+        userPreference: {
+          update: userPreference,
+        },
+      },
+      include: {
+        userPreference: true,
+      },
+    });
+    res.send(user);
   } catch (e) {
     return res.status(400).send({ error: "Check request body" });
   }
-  const user = await prisma.user.update({
-    where: { id },
-    data,
-  });
-  res.send(user);
 });
 
 app.delete("/users/:id", async (req, res) => {
@@ -94,12 +110,9 @@ app.delete("/users/:id", async (req, res) => {
   });
   res.status(user);
 });
+//#endregion
 
-app.listen(port, () => {
-  console.log(`Server is running on http://localhost:${port}`);
-});
-
-//product routes
+//#region Oproduct routes
 
 app.get("/products", async (req, res) => {
   const { offset = 0, limit = 0, order = "newest", category } = req.query;
@@ -181,4 +194,65 @@ app.delete("/products/:id", async (req, res) => {
       .status(400)
       .send({ error: "Cannot delete product that is associated with orders." });
   }
+});
+
+//#endregion
+
+//#region Orders
+
+app.get("/orders", async (req, res) => {
+  try {
+    const data = await prisma.order.findMany();
+    res.send(data);
+  } catch (e) {
+    res.sendStatus(e.status).send("dwadwa");
+  }
+});
+
+app.post("/orders", async (req, res) => {
+  try {
+    assert(req.body, CreateOrder);
+    const { orderItems, ...orderProperties } = req.body;
+    const productIds = orderItems.map((orderItem) => orderItem.productId);
+    function getQuantity(productId) {
+      const orderItem = orderItems.find(
+        (orderItem) => orderItem.productId === productId
+      );
+      return orderItem;
+    }
+
+    const products = await prisma.product.findMany({
+      where: { id: { in: productIds } },
+    });
+    const isSufficientStock = products.every((product) => {
+      const { id, stock } = product;
+      return stock >= getQuantity(id);
+    });
+
+    if (!isSufficientStock) {
+      return res.status(500).send({ message: "Insufficient Stock" });
+    }
+
+    const order = await prisma.order.create({
+      data: {
+        ...orderProperties,
+        orderItems: {
+          create: orderItems,
+        },
+        include: {
+          orderItems: true,
+        },
+      },
+    });
+
+    res.status(201).send(order);
+  } catch (e) {
+    console.log(e);
+  }
+});
+
+//#endregion
+
+app.listen(port, () => {
+  console.log(`Server is running on http://localhost:${port}`);
 });

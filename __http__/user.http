@@ -16,15 +16,18 @@ Content-Type: application/json
 }
 
 ###
-GET http://localhost:3000/users/708bab3a-5b4c-4024-9ae8-8d42746136a1
+GET http://localhost:3000/users/31194866-d63e-48ad-bd6a-f670dc02f650
 
 ###
-PATCH http://localhost:3000/users/9a410095-1254-48b9-9736-33089205db12
+PATCH http://localhost:3000/users/31194866-d63e-48ad-bd6a-f670dc02f650
 Content-Type: application/json
 
 {
-    "firstName": "ddwa",
-    "lastName": "sss"
+    "firstName": "test",
+    "lastName": "ssdw",
+    "userPreference":{
+        "receiveEmail":false
+    }
 }
 ###
 DELETE http://localhost:3000/users/8c65f9da-62fc-49d0-ae62-f3a183c36a17
