@@ -1,5 +1,5 @@
 node_modules/
 .env
 /generated/prisma
-__http__/
-prisma/
+/__http__/
+/prisma/
