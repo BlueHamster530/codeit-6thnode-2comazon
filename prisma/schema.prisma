@@ -45,8 +45,7 @@ model Product {
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
   OrderItems  OrderItem[]
-  User        User?       @relation(fields: [userId], references: [id])
-  userId      String?
+  savedUsers  User[]
 }
 
 model Order {
