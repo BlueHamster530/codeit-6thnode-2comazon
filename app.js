@@ -1,13 +1,8 @@
-import express from "express";
-import { Prisma, PrismaClient } from "@prisma/client";
-import { assert } from "superstruct";
-import {
-  CreateUser,
-  PatchUser,
-  CreateProduct,
-  PatchProduct,
-  CreateOrder,
-} from "./structs.js";
+import express from 'express';
+import { Prisma, PrismaClient } from '@prisma/client';
+import { assert } from 'superstruct';
+import { asyncHandler } from './Handlers.js';
+import { CreateUser, PatchUser, CreateProduct, PatchProduct, CreateOrder, PatchOrder } from './structs.js';
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -15,39 +10,19 @@ app.use(express.json());
 
 const prisma = new PrismaClient();
 
-//#region Handlers
-function asyncHandler(handler) {
-  return async function (req, res) {
-    try {
-      await handler(req, res);
-    } catch (e) {
-      console.error(e);
-      if (
-        e instanceof Prisma.PrismaClientKnownRequestError &&
-        e.code === "P2025"
-      ) {
-        res.sendStatus(404);
-      } else {
-        res.status(500).send({ message: e.message });
-      }
-    }
-  };
-}
-//#endregion
-
 //#region users routes
-app.get("/users", async (req, res) => {
-  const { offset = 0, limit = 0, order = "newest" } = req.query;
+app.get('/users', asyncHandler(async (req, res) => {
+  const { offset = 0, limit = 0, order = 'newest' } = req.query;
   let orderBy;
   switch (order) {
-    case "oldest":
-      orderBy = { createdAt: "asc" };
+    case 'oldest':
+      orderBy = { createdAt: 'asc' };
       break;
-    case "newest":
-      orderBy = { createdAt: "desc" };
+    case 'newest':
+      orderBy = { createdAt: 'desc' };
       break;
     default:
-      orderBy = { createdAt: "desc" };
+      orderBy = { createdAt: 'desc' };
   }
   const users = await prisma.user.findMany({
     orderBy,
@@ -60,99 +35,87 @@ app.get("/users", async (req, res) => {
   });
   console.log(users);
   res.send(users);
-});
+}));
 
-app.get(
-  "/users/:id",
-  asyncHandler(async (req, res) => {
-    const id = req.params.id;
-    const user = await prisma.user.findUniqueOrThrow({
-      where: { id },
-      include: { userPreference: true },
-    });
-    res.send(user);
-  })
+app.get('/users/:id', asyncHandler(async (req, res) => {
+  const id = req.params.id;
+  const user = await prisma.user.findUniqueOrThrow({
+    where: { id },
+    include: { userPreference: true },
+  });
+  res.send(user);
+}),
 );
 
-app.post("/users", async (req, res) => {
-  const data = req.body;
-  try {
-    assert(data, CreateUser);
-    const { userPreference, ...userFields } = req.body;
+app.post('/users', asyncHandler(async (req, res) => {
+  assert(req.body, CreateUser);
+  const { userPreference, ...userFields } = req.body;
 
-    const user = await prisma.user.create({
-      data: {
-        ...userFields,
-        userPreference: {
-          create: userPreference,
-        },
+  const user = await prisma.user.create({
+    data: {
+      ...userFields,
+      userPreference: {
+        create: userPreference,
       },
-      include: {
-        //저장에는 무관/ 보기 위한 코드
-        userPreference: true,
-      },
-    });
-    res.status(201).send(user);
-  } catch (e) {
-    console.error(e);
-    console.log("Validation failed");
-    return res.status(400).send({ error: "Check request body" });
-  }
-});
+    },
+    include: {
+      //저장에는 무관/ 보기 위한 코드
+      userPreference: true,
+    },
+  });
+  res.status(201).send(user);
+}),
+);
 
-app.patch("/users/:id", async (req, res) => {
+app.patch('/users/:id', asyncHandler(async (req, res) => {
   const { id } = req.params;
-  // const data = req.body;
-  try {
-    assert(req.body, PatchUser);
-    const { userPreference, ...userFields } = req.body;
-    const user = await prisma.user.update({
-      where: { id },
-      data: {
-        ...userFields,
-        userPreference: {
-          update: userPreference,
-        },
+  assert(req.body, PatchUser);
+  const { userPreference, ...userFields } = req.body;
+  const user = await prisma.user.update({
+    where: { id },
+    data: {
+      ...userFields,
+      userPreference: {
+        update: userPreference,
       },
-      include: {
-        userPreference: true,
-      },
-    });
-    res.send(user);
-  } catch (e) {
-    return res.status(400).send({ error: "Check request body" });
-  }
-});
+    },
+    include: {
+      userPreference: true,
+    },
+  });
+  res.send(user);
+}),
+);
 
-app.delete("/users/:id", async (req, res) => {
+app.delete('/users/:id', asyncHandler(async (req, res) => {
   const { id } = req.params;
   const user = await prisma.user.delete({
     where: { id },
   });
   res.status(user);
-});
+}));
 //#endregion
 
 //#region Oproduct routes
 
-app.get("/products", async (req, res) => {
-  const { offset = 0, limit = 0, order = "newest", category } = req.query;
+app.get('/products', asyncHandler(async (req, res) => {
+  const { offset = 0, limit = 0, order = 'newest', category } = req.query;
   let orderBy;
   switch (order) {
-    case "oldest":
-      orderBy = { createdAt: "asc" };
+    case 'oldest':
+      orderBy = { createdAt: 'asc' };
       break;
-    case "newest":
-      orderBy = { createdAt: "desc" };
+    case 'newest':
+      orderBy = { createdAt: 'desc' };
       break;
-    case "priceLowest":
-      orderBy = { price: "asc" };
+    case 'priceLowest':
+      orderBy = { price: 'asc' };
       break;
-    case "priceHighest":
-      orderBy = { price: "desc" };
+    case 'priceHighest':
+      orderBy = { price: 'desc' };
       break;
     default:
-      orderBy = { createdAt: "desc" };
+      orderBy = { createdAt: 'desc' };
   }
   const where = category ? { category } : {};
   const product = await prisma.product.findMany({
@@ -163,130 +126,142 @@ app.get("/products", async (req, res) => {
   });
   console.log(product);
   res.send(product);
-});
+}));
 
-app.get("/products/:id", async (req, res) => {
+app.get('/products/:id', asyncHandler(async (req, res) => {
   const { id } = req.params;
-  const product = await prisma.product.findUnique({
+  const product = await prisma.product.findUniqueOrThrow({
     where: { id },
   });
   res.send(product);
-});
+}));
 
-app.post("/products", async (req, res) => {
+app.post('/products', asyncHandler(async (req, res) => {
   const data = req.body;
-  try {
-    assert(data, CreateProduct);
-  } catch (e) {
-    return res.status(400).send({ error: "Check request body" });
-  }
+  assert(data, CreateProduct);
   const product = await prisma.product.create({
     data,
   });
   res.status(201).send(product);
-});
+}));
 
-app.patch("/products/:id", async (req, res) => {
+app.patch('/products/:id', asyncHandler(async (req, res) => {
   const { id } = req.params;
   const data = req.body;
-  try {
-    assert(data, PatchProduct);
-  } catch (e) {
-    return res.status(400).send({ error: "Check request body" });
-  }
+  assert(data, PatchProduct);
   const product = await prisma.product.update({
     where: { id },
     data,
   });
   res.send(product);
-});
+}));
 
-app.delete("/products/:id", async (req, res) => {
+app.delete('/products/:id', asyncHandler(async (req, res) => {
   const { id } = req.params;
-  try {
-    const product = await prisma.product.delete({
-      where: { id },
-    });
-
-    res.status(product);
-  } catch (error) {
-    console.error("없는 상품입니다.");
-    res
-      .status(400)
-      .send({ error: "Cannot delete product that is associated with orders." });
-  }
-});
+  const product = await prisma.product.delete({
+    where: { id },
+  });
+  res.status(204).send(product);
+}));
 
 //#endregion
 
 //#region Orders
 
-app.get("/orders", async (req, res) => {
-  try {
-    const data = await prisma.order.findMany();
-    res.send(data);
-  } catch (e) {
-    res.sendStatus(e.status).send("dwadwa");
-  }
-});
+app.get('/orders', asyncHandler(async (req, res) => {
+  const data = await prisma.order.findMany();
+  res.send(data);
+}));
 
-app.post("/orders", async (req, res) => {
-  try {
-    assert(req.body, CreateOrder);
-    const { orderItems, ...orderProperties } = req.body;
-    const productIds = orderItems.map((orderItem) => orderItem.productId);
-    function getQuantity(productId) {
-      const orderItem = orderItems.find(
-        (orderItem) => orderItem.productId === productId
-      );
-      return orderItem.quantity;
-    }
-
-    const products = await prisma.product.findMany({
-      where: { id: { in: productIds } },
-    });
-    const isSufficientStock = products.every((product) => {
-      const { id, stock } = product;
-      return stock >= getQuantity(id);
-    });
-
-    if (!isSufficientStock) {
-      return res.status(500).send({ message: "Insufficient Stock" });
-    }
-
-    const queries = productIds.map((id) => {
-      return prisma.product.update({
-        where: { id },
-        data: {
-          stock: { decrement: getQuantity(id) },
-        },
-      });
-    });
-
-    //재고 업데이트
-    const [order] = await prisma.$transaction([
-      prisma.order.create({
-        data: {
-          user: {
-            connect: { id: orderProperties.userId },
-          },
-          OrderItems: {
-            create: orderItems,
-          },
-        },
+app.get('/orders/:id', asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const order = await prisma.order.findUniqueOrThrow({
+    where: { id },
+    include: {
+      OrderItems: {
         include: {
-          OrderItems: true,
-        },
-      }),
-      ...queries,
-    ]);
-    //주문 생성
+          product: true,
+        }
+      }
+    },
+  });
+  let total = 0;
+  order.OrderItems.forEach((orderItem) => {
+    total += orderItem.unitPrice * orderItem.quantity;
+  });
+  order.total = total;
+  console.log(`구매 총액은 ${order.total} 입니다.`);
+  res.send(order);
+}));
 
-    res.status(201).send(order);
-  } catch (e) {
-    console.log(e);
+app.post('/orders', asyncHandler(async (req, res) => {
+  assert(req.body, CreateOrder);
+  const { orderItems, ...orderProperties } = req.body;
+  const productIds = orderItems.map((orderItem) => orderItem.productId);
+  function getQuantity(productId) {
+    const orderItem = orderItems.find((orderItem) => orderItem.productId === productId);
+    return orderItem.quantity;
   }
-});
+
+  const products = await prisma.product.findMany({
+    where: { id: { in: productIds } },
+  });
+  const isSufficientStock = products.every((product) => {
+    const { id, stock } = product;
+    return stock >= getQuantity(id);
+  });
+
+  if (!isSufficientStock) {
+    return res.status(500).send({ message: 'Insufficient Stock' });
+  }
+
+  const queries = productIds.map((id) => {
+    return prisma.product.update({
+      where: { id },
+      data: {
+        stock: { decrement: getQuantity(id) },
+      },
+    });
+  });
+
+  //재고 업데이트
+  const [order] = await prisma.$transaction([
+    prisma.order.create({
+      data: {
+        user: {
+          connect: { id: orderProperties.userId },
+        },
+        OrderItems: {
+          create: orderItems,
+        },
+      },
+      include: {
+        OrderItems: true,
+      },
+    }),
+    ...queries,
+  ]);
+  //주문 생성
+  res.status(201).send(order);
+}));
+
+app.patch('/orders/:id', asyncHandler(async (req, res) => {
+  assert(req.body, PatchOrder);
+  const { id } = req.params;
+  const { status } = req.body;
+  const data = await prisma.order.update({
+    where: { id },
+    data: { status }
+  });
+  res.send(data);
+}));
+
+app.delete('/orders/:id', asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  await prisma.order.delete({ where: { id } });
+  res.sendStatus(204);
+}));
+
 
 //#endregion
 

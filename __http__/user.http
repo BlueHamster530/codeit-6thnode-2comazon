@@ -6,7 +6,7 @@ POST http://localhost:3000/users
 Content-Type: application/json
 
 {
- "email": "test-12@test.com",
+ "email": "test-14@test.com",
 "firstName": "Adwa",
 "lastName": "Kim",
 "address": "Seoul, Korea",
@@ -19,7 +19,7 @@ Content-Type: application/json
 GET http://localhost:3000/users/31194866-d63e-48ad-bd6a-f6s70dc02f650
 
 ###
-PATCH http://localhost:3000/users/31194866-d63e-48ad-bd6a-f670dc02f650
+PATCH http://localhost:3000/users/81d18e9d-b07b-4f6e-ac1a-e53fce0c3219
 Content-Type: application/json
 
 {

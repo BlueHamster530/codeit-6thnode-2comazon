@@ -34,7 +34,7 @@ export const CreateProduct = s.object({
 
 export const PatchProduct = s.partial(CreateProduct);
 
-const OrderStatus = ["PENDING", "COMPLETE"];
+const Order_Status = ["PENDING", "COMPLETE"];
 
 export const CreateOrder = s.object({
   userId: s.define("Uuid", (value) => isUuid.v4(value)),
@@ -46,4 +46,9 @@ export const CreateOrder = s.object({
     })
   ),
   // status: s.enums(OrderStatus),
+});
+
+
+export const PatchOrder = s.object({
+  status: s.enums(Order_Status),
 });
